@@ -6,7 +6,8 @@ import pdb
 import preprocessor
 
 parser = argparse.ArgumentParser(
-    description='Script for generating word one-hot vectors for model'
+    description='Script for generating word one-hot vectors for model',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter
 )
 parser.add_argument(
     '--save_tokenizer',
@@ -30,22 +31,26 @@ def read_tweets(filename):
         for i, line in enumerate(lines):
             line = line.strip()
             label, tweet = line.split(',', 1)
-            labels.append(int(label))
+            try:
+                labels.append(int(label))
+            except ValueError:
+                continue
             tweet = preprocessor.tokenize(tweet)
             tweet = unidecode(tweet)
             tweets.append(tweet)
+    pdb.set_trace()
     return labels, tweets
 
 
 def fit_tokenizer(
     tweets,
     save_tokenizer,
-    tokenizer_save_filename='tokenizer.pickle'
+    tokenizer_save_filename
 ):
     import cPickle as pickle
     # pdb.set_trace()
     if (not os.path.exists(tokenizer_save_filename)):
-        tokenizer = Tokenizer(num_words=5000)
+        tokenizer = Tokenizer(num_words=50000)
         print 'Fitting tokenizer on tweets'
         tokenizer.fit_on_texts(tweets)
         print 'Finished fitting tokenizer'
@@ -62,8 +67,11 @@ def fit_tokenizer(
 if __name__ == '__main__':
     args = parser.parse_args()
     tweets_GT_file = args.tweets_file
+    tokenizer_save_filename = 'tokenizer.pickle'
+    if ('celeb' in tweets_GT_file):
+        tokenizer_save_filename = 'tokenizer_celeb.pickle'
     labels, tweets = read_tweets(tweets_GT_file)
-    fit_tokenizer(tweets, args.save_tokenizer)
+    fit_tokenizer(tweets, args.save_tokenizer, tokenizer_save_filename)
     rnd = np.random.get_state()
     np.random.shuffle(tweets)
     np.random.set_state(rnd)
@@ -76,11 +84,16 @@ if __name__ == '__main__':
     if (not os.path.exists('{}_tweets'.format(train_savefile))):
         train_tweets, test_tweets = [[] for _ in xrange(2)]
         train_labels, test_labels = [[] for _ in xrange(2)]
-        tweets_with_0, tweets_with_1 =\
-            filter(lambda x: x == 0, labels), filter(lambda x: x == 1, labels)
-        train_0_split_size, train_1_split_size =\
-            int(0.8 * len(tweets_with_0)), int(0.8 * len(tweets_with_1))
-        train_0_counter, train_1_counter = [0 for _ in xrange(2)]
+        tweets_with_0, tweets_with_1, tweets_with_2 =\
+            filter(lambda x: x == 0, labels),\
+            filter(lambda x: x == 1, labels),\
+            filter(lambda x: x == 2, labels)
+        train_0_split_size, train_1_split_size, train_2_split_size =\
+            int(0.8 * len(tweets_with_0)), int(0.8 * len(tweets_with_1)),\
+            int(0.8 * len(tweets_with_2))
+        train_0_counter, train_1_counter, train_2_counter = [
+            0 for _ in xrange(3)
+        ]
         # pdb.set_trace()
         for i, tweet in enumerate(tweets):
             if (labels[i] == 0):
@@ -94,6 +107,14 @@ if __name__ == '__main__':
             elif (labels[i] == 1):
                 if (train_1_counter < train_1_split_size):
                     train_1_counter += 1
+                    train_tweets.append(tweet)
+                    train_labels.append(labels[i])
+                else:
+                    test_tweets.append(tweet)
+                    test_labels.append(labels[i])
+            elif (labels[i] == 2):
+                if (train_2_counter < train_2_split_size):
+                    train_2_counter += 1
                     train_tweets.append(tweet)
                     train_labels.append(labels[i])
                 else:

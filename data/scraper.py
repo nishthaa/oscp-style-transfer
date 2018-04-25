@@ -31,7 +31,8 @@ if __name__ == '__main__':
     # 0 for male, 1 for female, followed by tweet
     save_csv = 'twitter_celeb_gender.csv'
 
-    for file in ('Top-1000-Celebrity-Twitter-Accounts.csv', 'bollywood.txt'):
+    # for file in ('Top-1000-Celebrity-Twitter-Accounts.csv', 'bollywood.txt'):
+    for file in ['news.txt']:
         content = read(file)
         scraped_profiles_file = '{}_scraped.npy'.format(file.split('.')[0])
         try:
@@ -68,6 +69,8 @@ if __name__ == '__main__':
                     gender = 1
                 elif (gender == 'M'):
                     gender = 0
+                elif (gender == 'N'):
+                    gender = 2
                 for tweet in tweets_to_save:
                     f.write('{},{}\n'.format(gender, tweet))
             scraped_profiles += 1

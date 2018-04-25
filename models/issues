@@ -1,0 +1,4 @@
+Possible issues for poor performance:
+i) Vocab size is too large and sparse
+ii) Network is too deep?
+iii) Preprocessing is getting rid of relevant information 
